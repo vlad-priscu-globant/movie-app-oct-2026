@@ -51,7 +51,7 @@ const handleLogin = () => {
     return
   }
 
-  console.log('Formular valid! Date trimise către API:', result.data)
+  console.log('Formular valid! Date trimise către API:', { email: result.data.email })
 }
 </script>
 

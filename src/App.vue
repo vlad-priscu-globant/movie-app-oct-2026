@@ -8,12 +8,7 @@
       <RouterLink to="/" class="text-3xl font-bold text-red-600 hover:text-red-500 transition-colors">
         MovieApp
       </RouterLink>
-      <nav class="flex gap-6 items-center">
-        <input 
-          type="text" 
-          placeholder="Căutare filme..." 
-          class="bg-zinc-900 text-white placeholder-gray-500 px-4 py-1.5 rounded-lg border border-zinc-800 focus:outline-hidden focus:border-red-600 transition-colors hidden sm:block text-sm" 
-        />
+      <nav class="flex gap-4 items-center">
         <RouterLink 
           to="/login" 
           class="text-sm bg-red-600 px-5 py-1.5 rounded-lg font-semibold hover:bg-red-700 active:scale-95 transition-all text-white"

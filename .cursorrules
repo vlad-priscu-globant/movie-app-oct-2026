@@ -1,0 +1,19 @@
+# Cursor AI Architectural Rules (`.cursorrules`)
+
+# Direct Cursor to the Master Architectural Blueprint
+Read and adhere strictly to @ARCHITECTURE.md and @AGENTS.md.
+
+# Ignored & Non-Tracked Directories
+- .nuxt/
+- .output/
+- node_modules/
+- dist/
+- .git/
+
+# Core Conventions
+1. Always use `<script setup lang="ts">` in Vue Single-File Components.
+2. Zero `any` types permitted. All interfaces, props, and emits must be strictly typed.
+3. No direct DOM manipulation. Use Vue Composition API (`ref`, `reactive`, `computed`).
+4. Props Down, Emits Up (`defineProps`, `defineEmits`). No in-place mutation of props.
+5. Surgical code modifications only. Do not reformat unrelated files.
+
