@@ -1,92 +1,95 @@
 <script setup lang="ts">
-import type { UserCredentials } from '../types';
+import { ref, reactive, watch } from 'vue'
+import { z } from 'zod'
 
-// În această sesiune ne concentrăm pe arhitectura statică și stilizare
-const handleLogin = (e: Event) => {
-  // exempla of getting a value form a form
-  // console.log(e.target[0].value)
-  e.preventDefault();
+// 1. Definim schema Zod
+const loginSchema = z.object({
+  //TODO give this to an ai to fix it.
+  email: z.string().min(1, 'Email-ul este obligatoriu').email('Adresa de email este invalidă'),
+  password: z.string().min(6, 'Parola trebuie să conțină minim 6 caractere')
+})
+
+// 1.5. Inferare tip TypeScript din schema Zod
+type LoginForm = z.infer<typeof loginSchema>
+
+// 2. State formular
+// Folosim ref pentru a demonstra lucrul cu ref-uri pe obiecte (necesită .value în JS)
+const form = ref<LoginForm>({
+  email: '',
+  password: ''
+})
+
+// Folosim reactive pentru a demonstra starea grupată fără .value
+const errors = reactive<Record<keyof LoginForm, string>>({
+  email: '',
+  password: ''
+})
+
+// 3. Watchers: Curățăm erorile când utilizatorul reîncepe să scrie
+// Monitorizăm proprietățile din interiorul ref-ului folosind funcții getter (.value.prop)
+watch(() => form.value.email, () => {
+  if (errors.email) errors.email = ''
+})
+watch(() => form.value.password, () => {
+  if (errors.password) errors.password = ''
+})
+
+// 4. Computed: Verificăm silențios dacă formularul este valid (pentru a debloca butonul)
+// const isFormValid = computed(() => {
+//   return loginSchema.safeParse(form.value).success
+// })
+
+// 5. Validare finală la Submit
+const handleLogin = () => {
+  const result = loginSchema.safeParse(form.value)
   
-  // Demonstrăm utilizarea tipului UserCredentials în TypeScript
-  const credentials: UserCredentials = {
-    email: "user@example.com",
-    password: "password123"
-  };
-  
-};
+  if (!result.success) {
+    // Extragem erorile din Zod și le punem în starea de erori
+    const formattedErrors = result.error.format()
+    errors.email = formattedErrors.email?._errors[0] || ''
+    errors.password = formattedErrors.password?._errors[0] || ''
+    return
+  }
+
+  console.log('Formular valid! Date trimise către API:', result.data)
+}
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-[75vh] px-4">
-    <div class="w-full max-w-md bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 backdrop-blur-lg shadow-2xl">
-      <div class="text-center mb-8">
-        <h2 class="text-3xl font-extrabold bg-gradient-to-r from-red-500 to-amber-500 bg-clip-text text-transparent">
-          Bun venit înapoi
-        </h2>
-        <p class="text-gray-400 text-sm mt-2">
-          Introdu datele tale pentru a accesa contul.
-        </p>
+  <div class="max-w-md mx-auto mt-10 bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-800">
+    <h2 class="text-2xl font-bold mb-6 text-center text-white">Autentificare</h2>
+    
+    <form @submit.prevent="handleLogin" class="flex flex-col gap-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+        <input 
+          v-model="form.email"
+          type="text" 
+          placeholder="exemplu@adresa.ro"
+          class="w-full bg-gray-950 text-white placeholder-gray-600 px-4 py-2 rounded-lg border focus:outline-hidden transition-colors"
+          :class="errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-red-600'"
+        />
+        <p v-if="errors.email" class="text-red-500 text-xs mt-1.5 font-medium">{{ errors.email }}</p>
       </div>
 
-      <form @submit="handleLogin" class="space-y-5">
-        <div>
-          <label for="email" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Adresă de Email
-          </label>
-          <input 
-            type="email" 
-            id="email" 
-            placeholder="nume@exemplu.com" 
-            required
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-hidden focus:border-red-600 focus:ring-1 focus:ring-red-600/50 transition-all text-sm"
-          />
-        </div>
-
-        <div>
-          <div class="flex justify-between items-center mb-2">
-            <label for="password" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Parolă
-            </label>
-            <a href="#" class="text-xs text-red-500 hover:underline">Ai uitat parola?</a>
-          </div>
-          <input 
-            type="password" 
-            id="password" 
-            placeholder="••••••••" 
-            required
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-hidden focus:border-red-600 focus:ring-1 focus:ring-red-600/50 transition-all text-sm"
-          />
-        </div>
-
-        <div class="flex items-center">
-          <input 
-            id="remember-me" 
-            type="checkbox" 
-            class="h-4 w-4 rounded-sm bg-zinc-950 border-zinc-800 text-red-600 focus:ring-0"
-          />
-          <label for="remember-me" class="ml-2 block text-sm text-gray-400 select-none">
-            Ține-mă minte pe acest dispozitiv
-          </label>
-        </div>
-
-        <button 
-          type="submit" 
-          class="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-red-600/20 transition-all duration-200 mt-6 text-sm"
-        >
-          Conectare
-        </button>
-      </form>
-
-      <div class="text-center mt-6 pt-6 border-t border-zinc-850">
-        <p class="text-sm text-gray-500">
-          Nu ai un cont încă? 
-          <a href="#" class="text-red-500 hover:underline font-medium">Creează cont nou</a>
-        </p>
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-1">Parolă</label>
+        <input 
+          v-model="form.password"
+          type="password" 
+          placeholder="••••••"
+          class="w-full bg-gray-950 text-white placeholder-gray-600 px-4 py-2 rounded-lg border focus:outline-hidden transition-colors"
+          :class="errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-red-600'"
+        />
+        <p v-if="errors.password" class="text-red-500 text-xs mt-1.5 font-medium">{{ errors.password }}</p>
       </div>
-    </div>
+
+      <button
+        type="submit" 
+        class="mt-4 text-white font-semibold py-2.5 rounded-lg transition-all bg-red-600 hover:bg-red-700 active:scale-95"
+      >
+        Intră în cont
+      </button>
+    </form>
   </div>
 </template>
-
-<style scoped>
-/* Însoțit integral de Tailwind utility classes */
-</style>
