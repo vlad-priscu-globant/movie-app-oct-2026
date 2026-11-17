@@ -18,10 +18,10 @@ The application architecture follows a phased 12-session curriculum and producti
 - **Client Routing:** `vue-router` v4 with HTML5 Web History mode.
 
 ### Phase 2 (Sessions 5–8) [ACTIVE - Current Phase]
-- **Session 05:** Component Architecture (Atomic design, Props & Emits) & Multi-Tool Agentic AI Context Setup.
-- **Session 06:** Early Backend Integration & External APIs (Local Express server, TMDB API, JWT authentication).
-- **Session 07:** Nuxt 3 Migration (Transition from Vite SPA to Nuxt 3 SSR, Nitro engine, Performance & Speed Insights).
-- **Session 08:** Backend As A Service (Supabase Auth, PostgreSQL Database Integration, Row-Level Security / RLS).
+- **Session 05:** Component Architecture (Atomic design, Props & Emits) & Multi-Tool Agentic AI Context Setup. *(Completed)*
+- **Session 06:** Early Backend Integration & External APIs (Local Express server, TMDB API, JWT authentication). *(Completed)*
+- **Session 07:** Nuxt 4 Migration (Transition from Vite SPA + Express to Nuxt 4 SSR, Nitro engine, masked TMDB endpoints, `@nuxt/image`, cookie JWT). *(Completed)*
+- **Session 08:** Backend As A Service (Supabase Auth, PostgreSQL Database Integration, Row-Level Security / RLS). *(Pending)*
 
 ### Phase 3 (Sessions 9–12) [PENDING]
 - **Session 09:** CI/CD & Cloud Deployment on Vercel (Staging & Production environments, Edge middleware).

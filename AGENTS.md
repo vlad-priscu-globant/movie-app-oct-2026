@@ -10,7 +10,7 @@
 
 All AI coding assistants MUST inspect and adhere to the master context pointers:
 
-1. **System Architecture Guide:** [`ARCHITECTURE.md`](file:///c:/projects/movie-app-oct-2026/ARCHITECTURE.md) (Core blueprint, Nuxt 3, Supabase, Express API)
+1. **System Architecture Guide:** [`ARCHITECTURE.md`](file:///c:/projects/movie-app-oct-2026/ARCHITECTURE.md) (Core blueprint, Nuxt 4, Nitro API, Supabase roadmap)
 2. **Project Preferences:** [`project-preferences.md`](file:///c:/projects/movie-app-oct-2026/project-preferences.md) (Tech stack evolution, Phase 1-3 roadmap, strict rules)
 3. **Discovery Report:** [`DISCOVERY_REPORT.md`](file:///c:/projects/movie-app-oct-2026/DISCOVERY_REPORT.md) (Installed dependencies & directory structure)
 4. **Persona & Operating Rules:** [`.agents/rules/persona-and-principles.md`](file:///c:/projects/movie-app-oct-2026/.agents/rules/persona-and-principles.md)
@@ -42,7 +42,7 @@ Every AI interaction and code edit MUST comply with the following 4 rules:
 ## 3. Technology Stack Evolution Roadmap
 
 * **Phase 1 (Sessions 1–4) [COMPLETED]:** Vite + Vue 3 Composition API + Tailwind CSS v4 + TypeScript + Zod.
-* **Phase 2 (Sessions 5–8) [ACTIVE - Session 05]:** Component Architecture + Express Backend + Nuxt 3 (SSR) + Supabase Auth & DB.
+* **Phase 2 (Sessions 5–8) [ACTIVE - Session 07 Completed]:** Component Architecture + Express Backend (migrated to Nitro) + Nuxt 4 (SSR) + Supabase Auth & DB (Session 08 pending).
 * **Phase 3 (Sessions 9–12) [PENDING]:** Vercel Deployment + Agile Workday Simulation (Jira, Git Flow, PR Reviews).
 
 ---
@@ -57,10 +57,13 @@ npm run dev
 npm run build
 
 # Direct typecheck verification
-npm run typecheck   # (npx vue-tsc --noEmit)
+npm run typecheck   # (nuxt typecheck)
 
 # Linting & code formatting verification
-npm run lint        # (npx eslint .)
+npm run lint        # (eslint .)
+
+# Unit / component test verification
+npm run test        # (vitest run)
 ```
 
 ---
