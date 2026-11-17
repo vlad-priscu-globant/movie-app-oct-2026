@@ -10,8 +10,8 @@ const emit = defineEmits<{
 }>()
 
 const handleInput = (event: Event) => {
-  const target = event.target as HTMLInputElement | null
-  emit('update:modelValue', target?.value ?? '')
+  const target = event.target as HTMLInputElement
+  emit('update:modelValue', target.value)
 }
 
 const handleClear = () => {

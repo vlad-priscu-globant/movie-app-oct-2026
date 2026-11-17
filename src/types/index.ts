@@ -6,6 +6,14 @@ export interface Movie {
   image: string;
 }
 
+export interface MovieDetail extends Movie {
+  overview?: string;
+  backdropImage?: string;
+  voteAverage?: number;
+  genres?: string[];
+  runtime?: number;
+}
+
 // Definiția structurii pentru datele de conectare
 export interface UserCredentials {
   email: string;

@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Movie } from '../types'
 import SearchBar from '../components/SearchBar.vue'
 import MovieCard from '../components/MovieCard.vue'
+import { fetchPopularMovies } from '../api/localDb'
 
-// Starea listei de filme
+const router = useRouter()
+
+// Starea listei de filme (cu fallback-uri inițiale)
 const movies = ref<Movie[]>([
   { id: 1, title: 'Inception', year: 2010, image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
   { id: 2, title: 'Interstellar', year: 2014, image: 'https://image.tmdb.org/t/p/w500/gEU2QlsUUHXjNpeMacBjQcs45u.jpg' },
@@ -14,31 +18,32 @@ const movies = ref<Movie[]>([
 // Starea input-ului de căutare
 const searchQuery = ref('')
 
-// Stare pentru filme favorite (demonstrație state)
-const favoriteIds = ref<Set<number>>(new Set())
+// Încărcare date publice din Backend (Server Express & TMDB proxy)
+const loadData = async () => {
+  try {
+    const popular = await fetchPopularMovies()
+    if (popular.length > 0) {
+      movies.value = popular
+    }
+  } catch (e) {
+    console.warn('Nu s-au putut prelua filmele din TMDB proxy, se folosesc cele locale:', e)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 
 // Stare derivată: returnează doar filmele care conțin textul din searchQuery
 const filteredMovies = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) return movies.value
   return movies.value.filter(movie => 
-    movie.title.toLowerCase().includes(query)
+    movie.title.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
-// Handlers pentru emisiile de la MovieCard
+// Navigation către pagina de detalii a filmului
 const handleSelectMovie = (movie: Movie) => {
-  console.log('Filmul selectat:', movie.title)
-}
-
-const handleToggleFavorite = (movieId: number) => {
-  const updated = new Set(favoriteIds.value)
-  if (updated.has(movieId)) {
-    updated.delete(movieId)
-  } else {
-    updated.add(movieId)
-  }
-  favoriteIds.value = updated
+  router.push(`/movie/${movie.id}`)
 }
 </script>
 
@@ -53,14 +58,12 @@ const handleToggleFavorite = (movieId: number) => {
     </div>
 
     <!-- Lista Filtrată utilizând MovieCard -->
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-      <MovieCard
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-5 md:gap-6">
+      <MovieCard 
         v-for="movie in filteredMovies" 
         :key="movie.id" 
         :movie="movie"
-        :is-favorite="favoriteIds.has(movie.id)"
         @select-movie="handleSelectMovie"
-        @toggle-favorite="handleToggleFavorite"
       />
     </div>
   </div>

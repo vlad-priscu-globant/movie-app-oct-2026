@@ -1,7 +1,7 @@
 <script setup lang="ts">
+
 const props = defineProps<{
   title: string
-  year?: number
   image?: string
 }>()
 </script>
@@ -11,11 +11,10 @@ const props = defineProps<{
     <div class="relative aspect-3/4 overflow-hidden bg-zinc-950">
       <img
         v-if="props.image"
-        :src="props.image"
-        :alt="title"
+        :src="image"
+        alt="Interstellar"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         loading="lazy"
-        decoding="async"
       />
       <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent"></div>
     </div>
@@ -24,10 +23,14 @@ const props = defineProps<{
         <h3 class="font-bold text-white group-hover:text-red-500 transition-colors text-sm line-clamp-1">
           {{ title }}
         </h3>
-        <span v-if="year" class="text-xs text-gray-500 font-medium block mt-1">{{ year }}</span>
+        <span class="text-xs text-gray-500 font-medium block mt-1">2014</span>
       </div>
     </div>
     <slot name="default"></slot>
     <slot name="extraInfo"></slot>
   </article>
 </template>
+
+<style scoped>
+
+</style>

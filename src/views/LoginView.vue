@@ -4,7 +4,6 @@ import { z } from 'zod'
 
 // 1. Definim schema Zod
 const loginSchema = z.object({
-  //TODO give this to an ai to fix it.
   email: z.string().min(1, 'Email-ul este obligatoriu').email('Adresa de email este invalidă'),
   password: z.string().min(6, 'Parola trebuie să conțină minim 6 caractere')
 })
