@@ -32,6 +32,12 @@ export function useFavorites(): UseFavorites {
     await asyncData
   }
 
+  watch(isAuthenticated, (authenticated) => {
+    if (!authenticated) {
+      data.value = []
+    }
+  })
+
   const favoriteIds = computed(() => new Set(data.value.map((movie) => movie.id)))
   const errorMessage = computed(() => (error.value ? 'Eroare la încărcarea listei de favorite' : null))
 
@@ -46,8 +52,12 @@ export function useFavorites(): UseFavorites {
 
     const { id, title, year, image } = movie
     await $fetch('/api/favorites', { method: 'POST', body: { id, title, year, image } })
-    data.value = [...data.value, { id, title, year, image }]
+    data.value = [movieSummary(id, title, year, image), ...data.value]
   }
 
   return { favorites: data, status, errorMessage, refresh, whenReady, isFavorite, toggleFavorite }
+}
+
+function movieSummary(id: number, title: string, year: number | null, image: string): Movie {
+  return { id, title, year, image }
 }

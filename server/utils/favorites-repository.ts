@@ -1,76 +1,100 @@
-import { z } from 'zod'
+import type { H3Event } from 'h3'
+import { serverSupabaseClient } from '#supabase/server'
 import { movieSchema } from '#shared/types/movie'
 import type { Movie } from '#shared/types/movie'
-import favoritesSeed from '../data/favorites.seed.json'
+import type { Database } from '#shared/types/database.types'
 
 /**
- * Persistence abstraction for favourites. Handlers depend on this interface
- * only, so Session 08 can swap the storage implementation for Supabase
- * without touching any route (Dependency Inversion).
+ * Persistence abstraction for user favourites backed by Supabase PostgreSQL
+ * (`public.favorites(user_id, movie_id)`) with Row-Level Security (RLS).
  */
 export interface FavoritesRepository {
-  list(username: string): Promise<Movie[]>
-  has(username: string, movieId: number): Promise<boolean>
+  list(userId: string): Promise<Movie[]>
+  has(userId: string, movieId: number): Promise<boolean>
   /** Returns `false` when the movie is already a favourite. */
-  add(username: string, movie: Movie): Promise<boolean>
+  add(userId: string, movie: Movie): Promise<boolean>
   /** Returns `false` when the movie was not a favourite. */
-  remove(username: string, movieId: number): Promise<boolean>
+  remove(userId: string, movieId: number): Promise<boolean>
 }
 
-const seedSchema = z.array(movieSchema.extend({ addedBy: z.string() }))
-
-function seedFor(username: string): Movie[] {
-  return seedSchema
-    .parse(favoritesSeed.favorites)
-    .filter((entry) => entry.addedBy === username)
-    .map(({ addedBy: _addedBy, ...movie }) => movie)
-}
-
-/**
- * Nitro `useStorage('data')` implementation. It is file-backed in local dev
- * (`.data/kv`) and in-memory on serverless hosts. Session 08 replaces it.
- */
-function createStorageFavoritesRepository(): FavoritesRepository {
-  const storage = useStorage('data')
-  const keyFor = (username: string): string => `favorites:${username}`
-
-  const read = async (username: string): Promise<Movie[]> => {
-    const stored = await storage.getItem(keyFor(username))
-    if (stored === null) return seedFor(username)
-    return z.array(movieSchema).parse(stored)
-  }
-
-  const write = (username: string, movies: Movie[]): Promise<void> => storage.setItem(keyFor(username), movies)
+/** Creates a request-scoped Supabase repository enforcing the caller's RLS session. */
+export async function useFavoritesRepository(event: H3Event): Promise<FavoritesRepository> {
+  const client = await serverSupabaseClient<Database>(event)
 
   return {
-    list: read,
+    async list(userId) {
+      const { data, error } = await client
+        .from('favorites')
+        .select('movie_id')
+        .eq('user_id', userId)
 
-    async has(username, movieId) {
-      const movies = await read(username)
-      return movies.some((movie) => movie.id === movieId)
+      if (error) {
+        console.error('[favorites] Failed to list favorites:', error.message)
+        throw createError({ statusCode: 500, statusMessage: 'Failed to load favorites' })
+      }
+
+      const settled = await Promise.allSettled(
+        (data ?? []).map(async (row) => {
+          const detail = await getMovieDetail(event, Number(row.movie_id))
+          return movieSchema.parse({
+            id: detail.id,
+            title: detail.title,
+            year: detail.year,
+            image: detail.image,
+          })
+        }),
+      )
+
+      return settled
+        .filter((result): result is PromiseFulfilledResult<Movie> => result.status === 'fulfilled')
+        .map((result) => result.value)
     },
 
-    async add(username, movie) {
-      const movies = await read(username)
-      if (movies.some((existing) => existing.id === movie.id)) return false
-      await write(username, [...movies, movie])
+    async has(userId, movieId) {
+      const { data, error } = await client
+        .from('favorites')
+        .select('movie_id')
+        .eq('user_id', userId)
+        .eq('movie_id', movieId)
+        .maybeSingle()
+
+      if (error) {
+        console.error('[favorites] Failed to check favorite:', error.message)
+        throw createError({ statusCode: 500, statusMessage: 'Failed to check favorite' })
+      }
+
+      return data !== null
+    },
+
+    async add(userId, movie) {
+      const { error } = await client.from('favorites').insert({
+        user_id: userId,
+        movie_id: movie.id,
+      })
+
+      if (error) {
+        if (error.code === '23505') return false
+        console.error('[favorites] Failed to insert favorite:', error.message)
+        throw createError({ statusCode: 500, statusMessage: 'Failed to save favorite' })
+      }
+
       return true
     },
 
-    async remove(username, movieId) {
-      const movies = await read(username)
-      const remaining = movies.filter((movie) => movie.id !== movieId)
-      if (remaining.length === movies.length) return false
-      await write(username, remaining)
-      return true
+    async remove(userId, movieId) {
+      const { data, error } = await client
+        .from('favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('movie_id', movieId)
+        .select('movie_id')
+
+      if (error) {
+        console.error('[favorites] Failed to remove favorite:', error.message)
+        throw createError({ statusCode: 500, statusMessage: 'Failed to remove favorite' })
+      }
+
+      return (data?.length ?? 0) > 0
     },
   }
-}
-
-let repository: FavoritesRepository | undefined
-
-/** Single swap point for the favourites persistence implementation. */
-export function useFavoritesRepository(): FavoritesRepository {
-  repository ??= createStorageFavoritesRepository()
-  return repository
 }

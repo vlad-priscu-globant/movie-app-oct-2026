@@ -5,18 +5,22 @@ import type { LoginForm } from '#shared/types/auth'
 useSeoMeta({ title: 'Autentificare | MovieApp' })
 
 const route = useRoute()
-const { login } = useAuth()
+const { isAuthenticated, login, register } = useAuth()
 
 const form = ref<LoginForm>({ email: '', password: '' })
 const errors = reactive<Record<keyof LoginForm, string>>({ email: '', password: '' })
+const isSignUp = ref(false)
 const submitError = ref('')
+const successMessage = ref('')
 const isSubmitting = ref(false)
 
 watch(() => form.value.email, () => {
   errors.email = ''
+  submitError.value = ''
 })
 watch(() => form.value.password, () => {
   errors.password = ''
+  submitError.value = ''
 })
 
 /** Only same-origin relative paths, which blocks open redirects (e.g. `//evil.com`). */
@@ -25,8 +29,23 @@ const redirectTarget = computed(() => {
   return typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
 })
 
-async function handleLogin(): Promise<void> {
+watchEffect(async () => {
+  if (isAuthenticated.value) {
+    await navigateTo(redirectTarget.value)
+  }
+})
+
+function toggleMode(): void {
+  isSignUp.value = !isSignUp.value
   submitError.value = ''
+  successMessage.value = ''
+  errors.email = ''
+  errors.password = ''
+}
+
+async function handleSubmit(): Promise<void> {
+  submitError.value = ''
+  successMessage.value = ''
   const result = loginFormSchema.safeParse(form.value)
 
   if (!result.success) {
@@ -38,10 +57,23 @@ async function handleLogin(): Promise<void> {
 
   isSubmitting.value = true
   try {
-    await login(result.data)
-    await navigateTo(redirectTarget.value)
-  } catch {
-    submitError.value = 'Email sau parolă incorecte.'
+    if (isSignUp.value) {
+      const { needsEmailConfirmation } = await register(result.data)
+      if (needsEmailConfirmation) {
+        successMessage.value = 'Cont creat! Verifică adresa de email pentru confirmare, apoi autentifică-te.'
+        isSignUp.value = false
+        form.value.password = ''
+      } else {
+        await navigateTo(redirectTarget.value)
+      }
+    } else {
+      await login(result.data)
+      await navigateTo(redirectTarget.value)
+    }
+  } catch (error) {
+    submitError.value = error instanceof Error
+      ? error.message
+      : 'Email sau parolă incorecte.'
   } finally {
     isSubmitting.value = false
   }
@@ -50,9 +82,19 @@ async function handleLogin(): Promise<void> {
 
 <template>
   <div class="max-w-md mx-auto mt-10 bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-800">
-    <h1 class="text-2xl font-bold mb-6 text-center text-white">Autentificare</h1>
+    <h1 class="text-2xl font-bold mb-6 text-center text-white">
+      {{ isSignUp ? 'Creare Cont' : 'Autentificare' }}
+    </h1>
 
-    <form class="flex flex-col gap-5" novalidate @submit.prevent="handleLogin">
+    <p
+      v-if="successMessage"
+      class="mb-4 text-center text-sm font-medium text-green-400 bg-green-950/50 p-3 rounded-lg border border-green-800"
+      role="status"
+    >
+      {{ successMessage }}
+    </p>
+
+    <form class="flex flex-col gap-5" novalidate @submit.prevent="handleSubmit">
       <div>
         <label for="login-email" class="block text-sm font-medium text-gray-400 mb-1">Email</label>
         <input
@@ -73,7 +115,7 @@ async function handleLogin(): Promise<void> {
           id="login-password"
           v-model="form.password"
           type="password"
-          autocomplete="current-password"
+          :autocomplete="isSignUp ? 'new-password' : 'current-password'"
           placeholder="••••••"
           class="w-full bg-gray-950 text-white placeholder-gray-600 px-4 py-2 rounded-lg border focus:outline-hidden transition-colors"
           :class="errors.password ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-red-600'"
@@ -88,7 +130,15 @@ async function handleLogin(): Promise<void> {
         :disabled="isSubmitting"
         class="mt-4 text-white font-semibold py-2.5 rounded-lg transition-all bg-red-600 hover:bg-red-700 active:scale-95 disabled:opacity-50 cursor-pointer"
       >
-        {{ isSubmitting ? 'Se conectează...' : 'Intră în cont' }}
+        {{ isSubmitting ? 'Se procesează...' : (isSignUp ? 'Creează cont' : 'Intră în cont') }}
+      </button>
+
+      <button
+        type="button"
+        class="text-sm text-gray-400 hover:text-white transition-colors cursor-pointer"
+        @click="toggleMode"
+      >
+        {{ isSignUp ? 'Ai deja cont? Autentifică-te' : 'Nu ai cont? Creează unul' }}
       </button>
     </form>
   </div>

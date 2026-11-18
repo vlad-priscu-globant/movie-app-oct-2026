@@ -5,7 +5,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-11-17',
   devtools: { enabled: true },
 
-  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/test-utils/module'],
+  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/test-utils/module', '@nuxtjs/supabase'],
+
+  supabase: {
+    types: '~~/shared/types/database.types.ts',
+    redirect: false,
+  },
 
   css: ['~/assets/css/main.css'],
 
@@ -21,15 +26,14 @@ export default defineNuxtConfig({
     },
   },
 
-  // Private (server-only) keys. Override them with NUXT_TMDB_API_TOKEN,
-  // NUXT_TMDB_BASE_URL and NUXT_JWT_SECRET. Nothing here goes into `public`,
-  // so TMDB credentials never reach the client bundle.
+  // Private (server-only) keys. Override them with NUXT_TMDB_API_TOKEN and
+  // NUXT_TMDB_BASE_URL. Nothing here goes into `public`, so TMDB credentials
+  // never reach the client bundle.
   runtimeConfig: {
     tmdb: {
       apiToken: '',
       baseUrl: 'https://api.themoviedb.org/3',
     },
-    jwtSecret: '',
   },
 
   // Posters go through the app's own image endpoint (/_ipx locally, Vercel
